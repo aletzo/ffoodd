@@ -7,8 +7,13 @@ import { Players } from '/imports/api/Players.js'
 import './controls.html'
 
 Template.controls.onCreated(function modeOnCreated () {
-  this.game = new ReactiveVar({})
-  this.player = new ReactiveVar({})
+  this.game = new ReactiveVar(Games.findOne())
+
+  const player = Players.findOne({
+    username: document.querySelector('#username')
+  })
+
+  this.player = new ReactiveVar(player)
 })
 
 Template.controls.helpers({
@@ -23,49 +28,15 @@ Template.controls.helpers({
 
 Template.controls.events({
   'click #fart' (event, instance) {
-    const player = Players.findOne({
-      username: document.querySelector('#username')
-    })
+    const player = Template.instance().player.get()
 
-    Players.update({
-      _id: {
-        $ne: player._id
-      }
-    }, {
-      $set: { isFarted: true }
-    })
-
-    setTimeout(() => {
-      Players.update({}, {
-        $set: { isFarted: false }
-      })
-    }, 2000)
+    Meteor.call('players.fart', player._id)
   },
 
   'click #wetFart' (event, instance) {
-    const player = Players.findOne({
-      username: document.querySelector('#username')
-    })
+    const player = Template.instance().player.get()
 
-    Players.update({}, {
-      $set: { isFarted: true }
-    })
-
-    setTimeout(() => {
-      Players.update({}, {
-        $set: { isFarted: false }
-      })
-    }, 2000)
-
-    setTimeout(() => {
-      Players.update({
-        _id: {
-          $ne: player._id
-        }
-      }, {
-        $set: { isFarted: false }
-      })
-    }, 5000)
+    Meteor.call('players.wetFart', player._id)
   },
 
   'click .eat' (event, instance) {
@@ -79,72 +50,9 @@ Template.controls.events({
     const countToBeEaten = document.querySelectorAll('.eat').length
 
     if (countEaten === countToBeEaten) {
-      const game = Games.findOne()
+      const player = Template.instance().player.get()
 
-      Template.instance().game.set(game)
-
-      const player = Players.findOne({
-        username: document.querySelector('#username')
-      })
-
-      Template.instance().player.set(player)
-
-      const playersDone = game.playersDone
-
-      let score = 0
-      let hasFart = false
-      let hasWetFart = false
-
-      switch (playersDone) {
-        case 0: score = 10; break
-        case 1: score = 7; break
-        case 2: score = 5; break
-        case 3: score = 3; break
-        case 4: score = 1; break
-
-        default:
-          hasFart = true
-      }
-
-      const roundDone = game.playersDone + 1 === game.playersCount
-
-      let gameDone = roundDone
-        ? game.round + 1 === game.roundsCount
-        : false
-
-      let round = game.round
-
-      if (roundDone) {
-        hasWetFart = true
-
-        round++
-
-        if (!gameDone) {
-          setTimeout(() => {
-            Games.update(game._id, {
-              $set: { eating: true }
-            })
-          }, 10000)
-        }
-      }
-
-      Games.update(game._id, {
-        $set: {
-          eating: !roundDone,
-          gameDone,
-          playersDone: playersDone + 1,
-          round
-        }
-      })
-
-      Players.update(player._id, {
-        $set: {
-          done: true,
-          hasFart,
-          hasWetFart,
-          score: player.score + score
-        }
-      })
+      Meteor.call('players.done', player._id)
     }
   }
 })

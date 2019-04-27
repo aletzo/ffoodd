@@ -2,18 +2,18 @@ import { Template } from 'meteor/templating'
 import { ReactiveVar } from 'meteor/reactive-var'
 
 import { Games } from '/imports/api/Games.js'
-import { Players } from '/imports/api/Players.js'
 
 import './leaderboard.js'
 
 import './host.html'
 
 Template.host.onCreated(function hostOnCreated () {
+  this.game = new ReactiveVar(Games.findOne())
 })
 
 Template.host.helpers({
   gameCreated () {
-    const game = Games.findOne()
+    const game = Template.instance().game.get()
 
     if (game === undefined) {
       return false
@@ -23,7 +23,7 @@ Template.host.helpers({
   },
 
   round0 () {
-    const game = Games.findOne()
+    const game = Template.instance().game.get()
 
     return game.round === 0
   }
@@ -31,37 +31,14 @@ Template.host.helpers({
 
 Template.host.events({
   'click #create' (event, instance) {
-    Meteor.call('games.truncate')
-    Meteor.call('players.truncate')
-
-    Games.insert({
-      eating: false,
-      round: 0,
-      roundsCount: 10
-    })
+    Meteor.call('games.create')
   },
 
   'click #reset' (event, instance) {
-    Meteor.call('games.truncate')
-    Meteor.call('players.truncate')
+    Meteor.call('games.reset')
   },
 
   'click #start' (event, instance) {
-    const game = Games.findOne()
-
-    game.round = 1
-
-    Games.update(game._id, {
-      $set: {
-        playersCount: Players.find({}).count(),
-        round: 1
-      }
-    })
-
-    setTimeout(() => {
-      Games.update(game._id, {
-        $set: { eating: true }
-      })
-    }, 10000)
+    Meteor.call('games.start')
   }
 })

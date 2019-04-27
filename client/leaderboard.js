@@ -11,22 +11,6 @@ Template.leaderboard.onCreated(function leaderboardOnCreated () {
 })
 
 Template.leaderboard.helpers({
-  noGame () {
-    return Template.instance().game.get() === {}
-  },
-
-  round0 () {
-    const game = Template.instance().game.get()
-
-    return game.round === 0
-  },
-
-  notRound0 () {
-    const game = Template.instance().game.get()
-
-    return game.round !== 0
-  },
-
   round () {
     const game = Template.instance().game.get()
 
@@ -39,9 +23,6 @@ Template.leaderboard.helpers({
 
   players () {
     const players = Players.find({}, { sort: { score: -1, username: 1 } })
-
-    console.log('players')
-    console.log(players)
 
     return players
   }
