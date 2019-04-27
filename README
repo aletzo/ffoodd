@@ -1,0 +1,29 @@
+ffoodd
+======
+
+how to install
+==============
+
+1. `git clone`
+2. `meteor`
+
+
+TODO:
+
+[] bottom x players get a fart
+[] bottom x players in a row get a wet fart
+[] leaderboard show farts and wet farts available next to the player
+[] puzzles don't have to be square
+[] chew sound on successful tap
+[] burp sound on successful round end
+[] fart (wind emoji) => block other for 2 seconds
+[] wet fart (poop emoji?) => block other for 5 seconds and self for 2 seconds
+[] walk through solution on round load
+
+wishlist:
+[] qr code
+[] set number of rounds
+[] set difficulty
+[] set pause duration
+[] player ready button
+

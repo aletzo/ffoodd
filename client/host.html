@@ -1,0 +1,14 @@
+<template name="host">
+    {{#if gameCreated}}
+        {{> leaderboard}}
+
+        {{#if round0}}
+            <button id="start">start eating!</button>
+        {{/if}}
+
+        <button id="reset">reset</button>
+    {{else}}
+        <button id="create">create game</button>
+    {{/if}}
+        
+</template>

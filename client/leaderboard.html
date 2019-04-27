@@ -1,0 +1,12 @@
+<template name="leaderboard">
+    round {{round}} out of 10
+    
+    <br>
+    players list
+
+    <ul>
+        {{#each players}}
+        <li>{{username}} {{score}}</li>
+        {{/each}}
+    </ul>
+</template>

@@ -1,0 +1,22 @@
+<template name="player">
+    {{#if player.username}}
+        hello {{player.username}}
+
+        <br>
+
+        {{#if game.round}}
+            {{> controls}}
+        {{else}}
+            waiting for others to join
+        {{/if}}
+    {{else}}
+        <input 
+            id="username"
+            name="username"
+            placeholder="username"
+            type="text" 
+        >
+
+        <button id="join">join!</button>
+    {{/if}}
+</template>

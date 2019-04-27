@@ -1,0 +1,16 @@
+<template name="mode">
+
+    {{#if noMode}}
+    <button class="mode">host</button>
+    <button class="mode">player</button>
+    {{/if}}
+
+    {{#if modeHost}}
+    {{> host}}
+    {{/if}}
+    
+    {{#if modePlayer}}
+    {{> player}}
+    {{/if}}
+    
+</template>

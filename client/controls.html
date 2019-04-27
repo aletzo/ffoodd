@@ -1,0 +1,35 @@
+<template name="controls">
+        
+    {{#if game.done}}
+        game done
+    {{else}}
+        {{#if game.eating}}
+            {{#if player.done}}
+                done!
+            {{else}}
+                {{#if player.isFarted}}
+                    nope
+                {{else}}
+                    eat!
+
+                    <button class="eat">eat</button>
+                    <button class="eat">eat</button>
+                    <button class="eat">eat</button>
+                    <button class="eat">eat</button>
+
+                    {{#if player.hasFart}}
+                        <button id="fart">fart</button>
+                    {{/if}}
+                    {{#if player.hasWetFart}}
+                        <button id="wetFart">wet fart</button>
+                    {{/if}}
+                {{/if}}
+            {{/if}}
+        {{else}}
+            round done
+        {{/if}}
+
+    {{/if}}
+        
+</template>
+
