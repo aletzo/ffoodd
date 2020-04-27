@@ -67,10 +67,7 @@ export default class Game extends GameEngine {
         // get the player paddle tied to the player socket
         let playerPlate = this.world.queryObject({ playerId });
         if (playerPlate) {
-            if (inputData.input === 'space') {
-
-                console.log(`player ${playerId} bit`);
-
+            if (inputData.input === 'bite') {
                 playerPlate.bites++;
             }
         }
@@ -91,7 +88,6 @@ export default class Game extends GameEngine {
 
     // attach newly connected player to next available paddle
     serverSidePlayerJoined(ev) {
-console.log('player joined' + ev.playerId);
         const plates = this.world.queryObjects({ instanceType: Plate });
 
         let joined = false;
@@ -102,17 +98,11 @@ console.log('player joined' + ev.playerId);
             }
 
             if (plate.playerId === 0) {
-console.log('player matched to plage' + ev.playerId);
                 plate.playerId = ev.playerId;
 
                 joined = true;
             }
         })
-
-console.log('plates');
-console.log(plates);
-
-
     }
 
     serverSidePlayerDisconnected(ev) {
@@ -122,7 +112,6 @@ console.log(plates);
             if (plate.playerId !== ev.playerId) {
                 return;
             }
-            console.log('plate removed');
             this.removeObjectFromWorld(plate.id);
         });
     }
@@ -132,14 +121,19 @@ console.log(plates);
     //
     clientSideInit() {
         this.controls = new KeyboardControls(this.renderer.clientEngine);
-        this.controls.bindKey('space', 'space');
+
+        document.querySelectorAll('button.bite').forEach(button => {
+            button.addEventListener('click', ev => {
+                this.controls.clientEngine.sendInput('bite');
+
+                button.classList.add('hidden');
+            });
+        });
+
     }
 
     clientSideDraw() {
         let plates = this.world.queryObjects({ instanceType: Plate });
-
-console.log('plates.length');
-console.log(plates.length);
 
         if (!plates.length) {
             return;
@@ -147,9 +141,6 @@ console.log(plates.length);
 
         plates.forEach((plate, i) => {
             const selector = '#plate' + i;
-
-console.log('selector');
-console.log(selector);
 
             const plateElement = document.querySelector(selector);
 

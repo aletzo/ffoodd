@@ -132,8 +132,7 @@ function (_GameEngine) {
       });
 
       if (playerPlate) {
-        if (inputData.input === 'space') {
-          console.log("player ".concat(playerId, " bit"));
+        if (inputData.input === 'bite') {
           playerPlate.bites++;
         }
       }
@@ -174,7 +173,6 @@ function (_GameEngine) {
   }, {
     key: "serverSidePlayerJoined",
     value: function serverSidePlayerJoined(ev) {
-      console.log('player joined' + ev.playerId);
       var plates = this.world.queryObjects({
         instanceType: Plate
       });
@@ -185,13 +183,10 @@ function (_GameEngine) {
         }
 
         if (plate.playerId === 0) {
-          console.log('player matched to plage' + ev.playerId);
           plate.playerId = ev.playerId;
           joined = true;
         }
       });
-      console.log('plates');
-      console.log(plates);
     }
   }, {
     key: "serverSidePlayerDisconnected",
@@ -206,8 +201,6 @@ function (_GameEngine) {
           return;
         }
 
-        console.log('plate removed');
-
         _this3.removeObjectFromWorld(plate.id);
       });
     } //
@@ -217,8 +210,16 @@ function (_GameEngine) {
   }, {
     key: "clientSideInit",
     value: function clientSideInit() {
+      var _this4 = this;
+
       this.controls = new _lanceGg.KeyboardControls(this.renderer.clientEngine);
-      this.controls.bindKey('space', 'space');
+      document.querySelectorAll('button.bite').forEach(function (button) {
+        button.addEventListener('click', function (ev) {
+          _this4.controls.clientEngine.sendInput('bite');
+
+          button.classList.add('hidden');
+        });
+      });
     }
   }, {
     key: "clientSideDraw",
@@ -226,8 +227,6 @@ function (_GameEngine) {
       var plates = this.world.queryObjects({
         instanceType: Plate
       });
-      console.log('plates.length');
-      console.log(plates.length);
 
       if (!plates.length) {
         return;
@@ -235,8 +234,6 @@ function (_GameEngine) {
 
       plates.forEach(function (plate, i) {
         var selector = '#plate' + i;
-        console.log('selector');
-        console.log(selector);
         var plateElement = document.querySelector(selector);
 
         if (plateElement) {
