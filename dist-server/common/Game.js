@@ -33,7 +33,26 @@ var PADDING = 30;
 var WIDTH = 400;
 var HEIGHT = 400;
 var PADDLE_WIDTH = 10;
-var PADDLE_HEIGHT = 50; // A paddle has a health attribute
+var PADDLE_HEIGHT = 50;
+
+var shuffle = function shuffle(arr) {
+  var currentIndex = arr.length;
+  var randomIndex;
+  var temporaryValue; // While there remain elements to shuffle...
+
+  while (0 !== currentIndex) {
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1; // And swap it with the current element.
+
+    temporaryValue = arr[currentIndex];
+    arr[currentIndex] = arr[randomIndex];
+    arr[randomIndex] = temporaryValue;
+  }
+
+  return arr;
+}; // A paddle has a health attribute
+
 
 var Plate =
 /*#__PURE__*/
@@ -213,12 +232,24 @@ function (_GameEngine) {
       var _this4 = this;
 
       this.controls = new _lanceGg.KeyboardControls(this.renderer.clientEngine);
-      document.querySelectorAll('button.bite').forEach(function (button) {
+      var order = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+      shuffle(order);
+      var bites = document.querySelector('#bites');
+      order.forEach(function (o) {
+        var button = document.createElement('button');
+        button.classList.add('bite');
+        button.setAttribute('data-order', o);
+        button.innerHTML = 'bite ' + o;
         button.addEventListener('click', function (ev) {
-          _this4.controls.clientEngine.sendInput('bite');
+          if (o !== document.querySelectorAll('.bite.hidden').length) {
+            return true;
+          }
 
           button.classList.add('hidden');
+
+          _this4.controls.clientEngine.sendInput('bite');
         });
+        bites.appendChild(button);
       });
     }
   }, {

@@ -6,6 +6,27 @@ const HEIGHT = 400;
 const PADDLE_WIDTH = 10;
 const PADDLE_HEIGHT = 50;
 
+const shuffle = arr => {
+  let currentIndex = arr.length;
+  let randomIndex;
+  let temporaryValue;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = arr[currentIndex];
+    arr[currentIndex] = arr[randomIndex];
+    arr[randomIndex] = temporaryValue;
+  }
+
+  return arr;
+}
+
 // A paddle has a health attribute
 class Plate extends DynamicObject {
 
@@ -122,14 +143,33 @@ export default class Game extends GameEngine {
     clientSideInit() {
         this.controls = new KeyboardControls(this.renderer.clientEngine);
 
-        document.querySelectorAll('button.bite').forEach(button => {
+        const order = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
+        shuffle(order);
+
+        const bites = document.querySelector('#bites');
+
+        order.forEach(o => {
+            let button = document.createElement('button'); 
+
+            button.classList.add('bite');
+
+            button.setAttribute('data-order', o);
+
+            button.innerHTML = 'bite ' + o;
+
             button.addEventListener('click', ev => {
-                this.controls.clientEngine.sendInput('bite');
+                if (o !== document.querySelectorAll('.bite.hidden').length) {
+                    return true;
+                }
 
                 button.classList.add('hidden');
-            });
-        });
 
+                this.controls.clientEngine.sendInput('bite');
+            });
+
+            bites.appendChild(button);
+        });
     }
 
     clientSideDraw() {
