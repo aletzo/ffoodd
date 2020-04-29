@@ -11,9 +11,9 @@ How to install
 2. Run the following commands
 
     ```
-    npm i
-    npm run build
-    npm start
+    yarn i
+    yarn run build
+    yarn start
     ```
 3. In a browser visit:
 
