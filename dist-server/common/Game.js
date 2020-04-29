@@ -270,7 +270,7 @@ function (_GameEngine) {
         if (plateElement) {
           plateElement.classList.remove('hidden');
           plateElement.style.width = (9 - plate.bites) * 20 + 'px';
-          plateElement.innerHTML = plate.playerId;
+          plateElement.innerHTML = plate.playerId + ' ' + plate.bites;
         }
       });
     }
