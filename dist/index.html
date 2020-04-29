@@ -1,58 +1,33 @@
 <html>
     <head>
-        <title>Another awesome Lance multiplayer network game</title>
+        <title>ffoodd</title>
         <script src="bundle.js" type="text/javascript"></script>
 
-        <style>
-            #game {
-                background: #d0d0d0;
-                height: 800px;
-                width: 800px;
-            }
-
-            .hidden {
-                display: none;
-            }
-            
-            .players {
-                left: 10px;
-                position: fixed;
-                top: 10px;
-            }
-
-            .player {
-                background-color: blue;
-                color: #fff;
-                height: 20px;
-                margin: 0 0 5px;
-                width: 180px;
-            }
-
-            .bites {
-                position: relative;
-                top: 100px;
-            }
-        </style>
+        <link rel="stylesheet" href="assets/css/bulma.min.css">
+        <link rel="stylesheet" href="assets/css/style.css">
     </head>
     <body>
-        <div id="game">
-            <div
-                class="players"
-                id="players"
-            >
+        <div class="columns">
+            <div class="column is-one-third">
+                <div
+                    class="players"
+                    id="players"
+                >
+                </div>
             </div>
 
-            <div 
-                class="bites"
-                id="bites"
-            >
-            </div>
+            <div class="column">
+                <div 
+                    class="bites"
+                    id="bites"
+                >
+                </div>
 
-            <div id="actions" class="actions">
-                <button id="kickLeft" class="kick">kick left</button>
-                <button id="burp" class="burp">burp</button>
-                <button id="fart" class="fart">fart</button>
-                <button id="kickRight" class="kick">kick right</button>
+                <div id="actions" class="actions">
+                    <button id="kickLeft" class="button kick">kick left</button>
+                    <button id="attack" class="button attack">attack</button>
+                    <button id="kickRight" class="button kick">kick right</button>
+                </div>
             </div>
         </div>
     </body>

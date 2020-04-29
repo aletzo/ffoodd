@@ -1,0 +1,47 @@
+body {
+    padding: 1em;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+
+.players {
+}
+
+.player {
+    background-color: rgb(255, 113, 206);
+    color: #fff;
+    height: 2em;
+    line-height: 2em;
+    margin: 0 0 0.5em;
+    width: 180px;
+}
+
+.bites {
+    display: grid;
+    grid-gap: 1px;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.bite {
+    height: 10em;
+}
+.bite:nth-child(1) { background-color: rgba(1, 205, 254, 0.1) }
+.bite:nth-child(2) { background-color: rgba(1, 205, 254, 0.2) }
+.bite:nth-child(3) { background-color: rgba(1, 205, 254, 0.3) }
+.bite:nth-child(4) { background-color: rgba(1, 205, 254, 0.4) }
+.bite:nth-child(5) { background-color: rgba(1, 205, 254, 0.5) }
+.bite:nth-child(6) { background-color: rgba(1, 205, 254, 0.6) }
+.bite:nth-child(7) { background-color: rgba(1, 205, 254, 0.7) }
+.bite:nth-child(8) { background-color: rgba(1, 205, 254, 0.8) }
+.bite:nth-child(9) { background-color: rgba(1, 205, 254, 0.9) }
+
+
+.actions {
+    display: grid;
+    grid-gap: 1em;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 3em;
+}

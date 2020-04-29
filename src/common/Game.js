@@ -18,7 +18,7 @@ const initBites = game => {
   order.forEach(o => {
     const button = document.createElement('button')
 
-    button.classList.add('bite')
+    button.classList.add('bite', 'button')
 
     button.setAttribute('data-order', o)
 
@@ -38,6 +38,12 @@ const initBites = game => {
       game.controls.clientEngine.sendInput('bite')
 
       if (o === PLATE_BITES - 1) {
+        const bites = document.querySelector('#bites')
+    
+        for (let i = bites.children.length; i >= 0; i--) {
+            bites.appendChild(bites.children[Math.random() * i | 0])
+        }
+
         document.querySelectorAll('.bite').forEach(b => b.classList.remove('hidden'))
       }
     })
@@ -210,6 +216,10 @@ export default class Game extends GameEngine {
     initBites(this)
 
     initPlayers(this)
+
+    window.addEventListener('beforeunload', ev => {
+      ev.returnValue = 'Are you sure you want to leave the game?'
+    })
   }
 
   clientSideDraw () {
