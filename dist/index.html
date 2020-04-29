@@ -14,13 +14,13 @@
                 display: none;
             }
             
-            .plates {
+            .players {
                 left: 10px;
                 position: fixed;
                 top: 10px;
             }
 
-            .plate {
+            .player {
                 background-color: blue;
                 color: #fff;
                 height: 20px;
@@ -36,18 +36,23 @@
     </head>
     <body>
         <div id="game">
-            <div class="plates">
-                <div class="plate hidden" id="plate0"></div>
-                <div class="plate hidden" id="plate1"></div>
-                <!--
-                <div class="plate hidden" id="plate2"></div>
-                <div class="plate hidden" id="plate3"></div>
-                <div class="plate hidden" id="plate4"></div>
-                <div class="plate hidden" id="plate5"></div>
-                -->
+            <div
+                class="players"
+                id="players"
+            >
             </div>
 
-            <div id="bites" class="bites">
+            <div 
+                class="bites"
+                id="bites"
+            >
+            </div>
+
+            <div id="actions" class="actions">
+                <button id="kickLeft" class="kick">kick left</button>
+                <button id="burp" class="burp">burp</button>
+                <button id="fart" class="fart">fart</button>
+                <button id="kickRight" class="kick">kick right</button>
             </div>
         </div>
     </body>

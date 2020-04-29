@@ -8,6 +8,7 @@ var _lanceGg = require("lance-gg");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/* global location */
 var qsOptions = _queryString.default.parse(location.search); // default options, overwritten by query-string options
 // is sent to both game engine and client engine
 

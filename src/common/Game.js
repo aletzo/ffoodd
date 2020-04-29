@@ -1,7 +1,64 @@
 import { GameEngine, BaseTypes, DynamicObject, KeyboardControls, SimplePhysicsEngine } from 'lance-gg'
 
 const BITE_WIDTH = 20
+const COUNTS_TO_WIN = 10
 const PLATE_BITES = 9
+const PLAYER_WIDTH_BUFFER = 60
+const PLAYERS_COUNT = 20
+
+const initBites = game => {
+  game.controls = new KeyboardControls(game.renderer.clientEngine)
+
+  const order = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+  shuffle(order)
+
+  const bites = document.querySelector('#bites')
+
+  order.forEach(o => {
+    const button = document.createElement('button')
+
+    button.classList.add('bite')
+
+    button.setAttribute('data-order', o)
+
+    button.innerHTML = 'bite ' + o
+
+    button.addEventListener('click', ev => {
+      if (o !== document.querySelectorAll('.bite.hidden').length) {
+        return true
+      }
+
+      if (button.classList.contains('blocked')) {
+        return true
+      }
+
+      button.classList.add('hidden')
+
+      game.controls.clientEngine.sendInput('bite')
+
+      if (o === PLATE_BITES - 1) {
+        document.querySelectorAll('.bite').forEach(b => b.classList.remove('hidden'))
+      }
+    })
+
+    bites.appendChild(button)
+  })
+}
+
+const initPlayers = game => {
+  const players = document.querySelector('#players')
+
+  for (let i = 0; i < PLAYERS_COUNT; i++) {
+    const player = document.createElement('div')
+
+    player.classList.add('player', 'hidden')
+
+    player.setAttribute('id', 'player' + i)
+
+    players.appendChild(player)
+  }
+}
 
 const shuffle = arr => {
   let currentIndex = arr.length
@@ -29,6 +86,7 @@ class Plate extends DynamicObject {
     super(gameEngine, options, props)
 
     this.bites = 0
+    this.blocked = 0
     this.count = 0
   }
 
@@ -81,7 +139,7 @@ export default class Game extends GameEngine {
         p.count++
         p.bites = 0
 
-        if (p.count === 10) {
+        if (p.count === COUNTS_TO_WIN) {
         }
       }
     })
@@ -91,10 +149,10 @@ export default class Game extends GameEngine {
     super.processInput(inputData, playerId)
 
     // get the player paddle tied to the player socket
-    const playerPlate = this.world.queryObject({ playerId })
-    if (playerPlate) {
+    const plate = this.world.queryObject({ playerId })
+    if (plate) {
       if (inputData.input === 'bite') {
-        playerPlate.bites++
+        plate.bites++
       }
     }
   }
@@ -103,13 +161,16 @@ export default class Game extends GameEngine {
   // SERVER ONLY CODE
   //
   serverSideInit () {
-    // create the paddles and the ball
-    this.addObjectToWorld(new Plate(this, null, { playerId: 0, bites: 0, count: 0 }))
-    this.addObjectToWorld(new Plate(this, null, { playerId: 0, bites: 0, count: 0 }))
-    this.addObjectToWorld(new Plate(this, null, { playerId: 0, bites: 0, count: 0 }))
-    this.addObjectToWorld(new Plate(this, null, { playerId: 0, bites: 0, count: 0 }))
-    this.addObjectToWorld(new Plate(this, null, { playerId: 0, bites: 0, count: 0 }))
-    this.addObjectToWorld(new Plate(this, null, { playerId: 0, bites: 0, count: 0 }))
+    const initValues = {
+      bites: 0,
+      blocked: false,
+      count: 0,
+      playerId: 0
+    }
+
+    for (let i = 0; i < PLAYERS_COUNT; i++) {
+      this.addObjectToWorld(new Plate(this, null, initValues))
+    }
   }
 
   // attach newly connected player to next available paddle
@@ -146,35 +207,9 @@ export default class Game extends GameEngine {
   // CLIENT ONLY CODE
   //
   clientSideInit () {
-    this.controls = new KeyboardControls(this.renderer.clientEngine)
+    initBites(this)
 
-    const order = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-    shuffle(order)
-
-    const bites = document.querySelector('#bites')
-
-    order.forEach(o => {
-      const button = document.createElement('button')
-
-      button.classList.add('bite')
-
-      button.setAttribute('data-order', o)
-
-      button.innerHTML = 'bite ' + o
-
-      button.addEventListener('click', ev => {
-        if (o !== document.querySelectorAll('.bite.hidden').length) {
-          return true
-        }
-
-        button.classList.add('hidden')
-
-        this.controls.clientEngine.sendInput('bite')
-      })
-
-      bites.appendChild(button)
-    })
+    initPlayers(this)
   }
 
   clientSideDraw () {
@@ -185,14 +220,12 @@ export default class Game extends GameEngine {
     }
 
     plates.forEach((plate, i) => {
-      const selector = '#plate' + i
+      const plateElement = document.querySelector('#player' + i)
 
-      const plateElement = document.querySelector(selector)
-
-      if (plateElement) {
+      if (plateElement && plate.playerId) {
         plateElement.classList.remove('hidden')
-        plateElement.style.width = ((PLATE_BITES - plate.bites) * BITE_WIDTH) + 'px'
-        plateElement.innerHTML = plate.playerId + ' ' + plate.bite
+        plateElement.style.width = PLAYER_WIDTH_BUFFER + ((PLATE_BITES - plate.bites) * BITE_WIDTH) + 'px'
+        plateElement.innerHTML = [plate.playerId, plate.count, plate.bites].join(' ')
       }
     })
   }

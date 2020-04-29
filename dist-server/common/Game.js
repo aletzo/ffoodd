@@ -29,18 +29,61 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-var PADDING = 30;
-var WIDTH = 400;
-var HEIGHT = 400;
-var PADDLE_WIDTH = 10;
-var PADDLE_HEIGHT = 50;
+var BITE_WIDTH = 20;
+var COUNTS_TO_WIN = 10;
+var PLATE_BITES = 9;
+var PLAYER_WIDTH_BUFFER = 60;
+var PLAYERS_COUNT = 20;
+
+var initBites = function initBites(game) {
+  game.controls = new _lanceGg.KeyboardControls(game.renderer.clientEngine);
+  var order = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  shuffle(order);
+  var bites = document.querySelector('#bites');
+  order.forEach(function (o) {
+    var button = document.createElement('button');
+    button.classList.add('bite');
+    button.setAttribute('data-order', o);
+    button.innerHTML = 'bite ' + o;
+    button.addEventListener('click', function (ev) {
+      if (o !== document.querySelectorAll('.bite.hidden').length) {
+        return true;
+      }
+
+      if (button.classList.contains('blocked')) {
+        return true;
+      }
+
+      button.classList.add('hidden');
+      game.controls.clientEngine.sendInput('bite');
+
+      if (o === PLATE_BITES - 1) {
+        document.querySelectorAll('.bite').forEach(function (b) {
+          return b.classList.remove('hidden');
+        });
+      }
+    });
+    bites.appendChild(button);
+  });
+};
+
+var initPlayers = function initPlayers(game) {
+  var players = document.querySelector('#players');
+
+  for (var i = 0; i < PLAYERS_COUNT; i++) {
+    var player = document.createElement('div');
+    player.classList.add('player', 'hidden');
+    player.setAttribute('id', 'player' + i);
+    players.appendChild(player);
+  }
+};
 
 var shuffle = function shuffle(arr) {
   var currentIndex = arr.length;
   var randomIndex;
   var temporaryValue; // While there remain elements to shuffle...
 
-  while (0 !== currentIndex) {
+  while (currentIndex !== 0) {
     // Pick a remaining element...
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex -= 1; // And swap it with the current element.
@@ -66,6 +109,8 @@ function (_DynamicObject) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Plate).call(this, gameEngine, options, props));
     _this.bites = 0;
+    _this.blocked = 0;
+    _this.count = 0;
     return _this;
   }
 
@@ -75,12 +120,16 @@ function (_DynamicObject) {
       _get(_getPrototypeOf(Plate.prototype), "syncTo", this).call(this, other);
 
       this.bites = other.bites;
+      this.count = other.count;
     }
   }], [{
     key: "netScheme",
     get: function get() {
       return Object.assign({
         bites: {
+          type: _lanceGg.BaseTypes.TYPES.INT16
+        },
+        count: {
           type: _lanceGg.BaseTypes.TYPES.INT16
         }
       }, _get(_getPrototypeOf(Plate), "netScheme", this));
@@ -133,10 +182,17 @@ function (_GameEngine) {
       var plates = this.world.queryObjects({
         instanceType: Plate
       });
-      if (plates.length < 2) return;
+
+      if (plates.length < 2) {
+        return;
+      }
+
       plates.forEach(function (p, i) {
-        if (p.bites === 9) {
-          console.log("player ".concat(i, " wins"));
+        if (p.bites === PLATE_BITES) {
+          p.count++;
+          p.bites = 0;
+
+          if (p.count === COUNTS_TO_WIN) {}
         }
       });
     }
@@ -146,13 +202,13 @@ function (_GameEngine) {
       _get(_getPrototypeOf(Game.prototype), "processInput", this).call(this, inputData, playerId); // get the player paddle tied to the player socket
 
 
-      var playerPlate = this.world.queryObject({
+      var plate = this.world.queryObject({
         playerId: playerId
       });
 
-      if (playerPlate) {
+      if (plate) {
         if (inputData.input === 'bite') {
-          playerPlate.bites++;
+          plate.bites++;
         }
       }
     } //
@@ -162,31 +218,16 @@ function (_GameEngine) {
   }, {
     key: "serverSideInit",
     value: function serverSideInit() {
-      // create the paddles and the ball
-      this.addObjectToWorld(new Plate(this, null, {
-        playerId: 0,
-        bites: 0
-      }));
-      this.addObjectToWorld(new Plate(this, null, {
-        playerId: 0,
-        bites: 0
-      }));
-      this.addObjectToWorld(new Plate(this, null, {
-        playerId: 0,
-        bites: 0
-      }));
-      this.addObjectToWorld(new Plate(this, null, {
-        playerId: 0,
-        bites: 0
-      }));
-      this.addObjectToWorld(new Plate(this, null, {
-        playerId: 0,
-        bites: 0
-      }));
-      this.addObjectToWorld(new Plate(this, null, {
-        playerId: 0,
-        bites: 0
-      }));
+      var initValues = {
+        bites: 0,
+        blocked: false,
+        count: 0,
+        playerId: 0
+      };
+
+      for (var i = 0; i < PLAYERS_COUNT; i++) {
+        this.addObjectToWorld(new Plate(this, null, initValues));
+      }
     } // attach newly connected player to next available paddle
 
   }, {
@@ -229,28 +270,8 @@ function (_GameEngine) {
   }, {
     key: "clientSideInit",
     value: function clientSideInit() {
-      var _this4 = this;
-
-      this.controls = new _lanceGg.KeyboardControls(this.renderer.clientEngine);
-      var order = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-      shuffle(order);
-      var bites = document.querySelector('#bites');
-      order.forEach(function (o) {
-        var button = document.createElement('button');
-        button.classList.add('bite');
-        button.setAttribute('data-order', o);
-        button.innerHTML = 'bite ' + o;
-        button.addEventListener('click', function (ev) {
-          if (o !== document.querySelectorAll('.bite.hidden').length) {
-            return true;
-          }
-
-          button.classList.add('hidden');
-
-          _this4.controls.clientEngine.sendInput('bite');
-        });
-        bites.appendChild(button);
-      });
+      initBites(this);
+      initPlayers(this);
     }
   }, {
     key: "clientSideDraw",
@@ -264,13 +285,12 @@ function (_GameEngine) {
       }
 
       plates.forEach(function (plate, i) {
-        var selector = '#plate' + i;
-        var plateElement = document.querySelector(selector);
+        var plateElement = document.querySelector('#player' + i);
 
-        if (plateElement) {
+        if (plateElement && plate.playerId) {
           plateElement.classList.remove('hidden');
-          plateElement.style.width = (9 - plate.bites) * 20 + 'px';
-          plateElement.innerHTML = plate.playerId + ' ' + plate.bites;
+          plateElement.style.width = PLAYER_WIDTH_BUFFER + (PLATE_BITES - plate.bites) * BITE_WIDTH + 'px';
+          plateElement.innerHTML = [plate.playerId, plate.count, plate.bites].join(' ');
         }
       });
     }
