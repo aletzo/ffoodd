@@ -209,10 +209,6 @@ export default class Game extends GameEngine {
   //
   clientSideInit () {
     initBites(this)
-
-    console.log('this')
-    console.log(this)
-
     initPlayers(this)
 
     if (!DEBUG) {
@@ -244,8 +240,12 @@ export default class Game extends GameEngine {
       }
 
       plateElement.classList.toggle('blocked', plate.blocked)
-      plateElement.classList.toggle('canAttack', plate.blocked)
+      plateElement.classList.toggle('canAttack', plate.canAttack)
       plateElement.classList.toggle('playing', plate.playing)
+
+      if (this.playerId === plate.playerId) {
+        document.querySelector('#attack').classList.toggle('canAttack', plate.canAttack)
+      }
 
       plateElement.classList.remove('hidden')
 
