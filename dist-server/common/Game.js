@@ -251,9 +251,12 @@ var Game = /*#__PURE__*/function (_GameEngine) {
     value: function clientSideInit() {
       (0, _initHelpers.initBites)(this);
       (0, _initHelpers.initPlayers)(this);
-      window.addEventListener('beforeunload', function (ev) {
-        ev.returnValue = 'Are you sure you want to leave the game?';
-      });
+
+      if (!_constants.DEBUG) {
+        window.addEventListener('beforeunload', function (ev) {
+          ev.returnValue = 'Are you sure you want to leave the game?';
+        });
+      }
     }
   }, {
     key: "clientSideDraw",
@@ -267,10 +270,21 @@ var Game = /*#__PURE__*/function (_GameEngine) {
       }).forEach(function (plate, i) {
         var plateElement = document.querySelector('#player' + i);
 
-        if (!plateElement || !plate.playerId) {
+        if (!plateElement) {
           return;
         }
 
+        if (!plate.playerId) {
+          plateElement.classList.add('hidden');
+          return;
+        }
+
+        if (!plate.isWinner) {
+          plateElement.classList.add('winner');
+        }
+
+        plateElement.classList.toggle('blocked', plate.blocked);
+        plateElement.classList.add('playing', plate.playing);
         plateElement.classList.remove('hidden');
         plateElement.style.width = _constants.PLAYER_WIDTH_BUFFER + (_constants.PLATE_BITES - plate.bites) * _constants.BITE_WIDTH + 'px';
         var playerInfo = [];

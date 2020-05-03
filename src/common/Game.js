@@ -174,9 +174,11 @@ export default class Game extends GameEngine {
 
     initPlayers(this)
 
-    window.addEventListener('beforeunload', ev => {
-      ev.returnValue = 'Are you sure you want to leave the game?'
-    })
+    if (!DEBUG) {
+      window.addEventListener('beforeunload', ev => {
+        ev.returnValue = 'Are you sure you want to leave the game?'
+      })
+    }
   }
 
   clientSideDraw () {
@@ -187,11 +189,25 @@ export default class Game extends GameEngine {
     plates.filter(p => p.playerId !== 0).forEach((plate, i) => {
       const plateElement = document.querySelector('#player' + i)
 
-      if (!plateElement || !plate.playerId) {
+      if (!plateElement) {
         return
       }
 
+      if (!plate.playerId) {
+        plateElement.classList.add('hidden')
+        return
+      }
+
+      if (plate.isWinner) {
+        plateElement.classList.add('winner')
+      }
+
+      plateElement.classList.toggle('blocked', plate.blocked)
+
+      plateElement.classList.add('playing', plate.playing)
+
       plateElement.classList.remove('hidden')
+
       plateElement.style.width = PLAYER_WIDTH_BUFFER + ((PLATE_BITES - plate.bites) * BITE_WIDTH) + 'px'
 
       const playerInfo = []
