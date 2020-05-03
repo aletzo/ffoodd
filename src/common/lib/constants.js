@@ -1,0 +1,16 @@
+const DEBUG = true
+
+const BITE_WIDTH = 20
+const COUNTS_TO_WIN = 10
+const PLATE_BITES = 9
+const PLAYER_WIDTH_BUFFER = 60
+const PLAYERS_COUNT = 20
+
+export {
+  DEBUG,
+  BITE_WIDTH,
+  COUNTS_TO_WIN,
+  PLATE_BITES,
+  PLAYER_WIDTH_BUFFER,
+  PLAYERS_COUNT
+}

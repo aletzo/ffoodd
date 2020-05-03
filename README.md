@@ -11,7 +11,7 @@ How to install
 2. Run the following commands
 
     ```
-    yarn i
+    yarn install
     yarn run build
     yarn start
     ```

@@ -7,6 +7,10 @@ exports["default"] = void 0;
 
 var _lanceGg = require("lance-gg");
 
+var _initHelpers = require("./lib/init-helpers.js");
+
+var _constants = require("./lib/constants.js");
+
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -33,80 +37,7 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
-var BITE_WIDTH = 20;
-var COUNTS_TO_WIN = 10;
-var PLATE_BITES = 9;
-var PLAYER_WIDTH_BUFFER = 60;
-var PLAYERS_COUNT = 20;
-
-var initBites = function initBites(game) {
-  game.controls = new _lanceGg.KeyboardControls(game.renderer.clientEngine);
-  var order = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-  shuffle(order);
-  var bites = document.querySelector('#bites');
-  order.forEach(function (o) {
-    var button = document.createElement('button');
-    button.classList.add('bite', 'button');
-    button.setAttribute('data-order', o);
-    button.innerHTML = 'bite ' + o;
-    button.addEventListener('click', function (ev) {
-      if (o !== document.querySelectorAll('.bite.hidden').length) {
-        return true;
-      }
-
-      if (button.classList.contains('blocked')) {
-        return true;
-      }
-
-      button.classList.add('hidden');
-      game.controls.clientEngine.sendInput('bite');
-
-      if (o === PLATE_BITES - 1) {
-        var _bites = document.querySelector('#bites');
-
-        for (var i = _bites.children.length; i >= 0; i--) {
-          _bites.appendChild(_bites.children[Math.random() * i | 0]);
-        }
-
-        document.querySelectorAll('.bite').forEach(function (b) {
-          return b.classList.remove('hidden');
-        });
-      }
-    });
-    bites.appendChild(button);
-  });
-};
-
-var initPlayers = function initPlayers(game) {
-  var players = document.querySelector('#players');
-
-  for (var i = 0; i < PLAYERS_COUNT; i++) {
-    var player = document.createElement('div');
-    player.classList.add('player', 'hidden');
-    player.setAttribute('id', 'player' + i);
-    players.appendChild(player);
-  }
-};
-
-var shuffle = function shuffle(arr) {
-  var currentIndex = arr.length;
-  var randomIndex;
-  var temporaryValue; // While there remain elements to shuffle...
-
-  while (currentIndex !== 0) {
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1; // And swap it with the current element.
-
-    temporaryValue = arr[currentIndex];
-    arr[currentIndex] = arr[randomIndex];
-    arr[randomIndex] = temporaryValue;
-  }
-
-  return arr;
-}; // A paddle has a health attribute
-
-
+// A paddle has a health attribute
 var Plate = /*#__PURE__*/function (_DynamicObject) {
   _inherits(Plate, _DynamicObject);
 
@@ -121,6 +52,10 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
     _this.bites = 0;
     _this.blocked = 0;
     _this.count = 0;
+    _this.isWinner = 0;
+    _this.name = '';
+    _this.playerId = 0;
+    _this.playing = 0;
     return _this;
   }
 
@@ -130,17 +65,37 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
       _get(_getPrototypeOf(Plate.prototype), "syncTo", this).call(this, other);
 
       this.bites = other.bites;
+      this.blocked = other.blocked;
       this.count = other.count;
+      this.isWinner = other.isWinner;
+      this.name = other.name;
+      this.playerId = other.playerId;
+      this.playing = other.playing;
     }
   }], [{
     key: "netScheme",
     get: function get() {
       return Object.assign({
         bites: {
-          type: _lanceGg.BaseTypes.TYPES.INT16
+          type: _lanceGg.BaseTypes.TYPES.INT8
+        },
+        blocked: {
+          type: _lanceGg.BaseTypes.TYPES.INT8
         },
         count: {
-          type: _lanceGg.BaseTypes.TYPES.INT16
+          type: _lanceGg.BaseTypes.TYPES.INT8
+        },
+        isWinner: {
+          type: _lanceGg.BaseTypes.TYPES.INT8
+        },
+        name: {
+          type: _lanceGg.BaseTypes.TYPES.STRING
+        },
+        playerId: {
+          type: _lanceGg.BaseTypes.TYPES.INT8
+        },
+        playing: {
+          type: _lanceGg.BaseTypes.TYPES.INT8
         }
       }, _get(_getPrototypeOf(Plate), "netScheme", this));
     }
@@ -198,11 +153,15 @@ var Game = /*#__PURE__*/function (_GameEngine) {
       }
 
       plates.forEach(function (p, i) {
-        if (p.bites === PLATE_BITES) {
+        if (p.bites === _constants.PLATE_BITES) {
           p.count++;
           p.bites = 0;
 
-          if (p.count === COUNTS_TO_WIN) {}
+          if (p.count === _constants.COUNTS_TO_WIN) {
+            p.blocked = 1;
+            p.playing = 0;
+            p.isWinner = 1;
+          }
         }
       });
     }
@@ -217,7 +176,12 @@ var Game = /*#__PURE__*/function (_GameEngine) {
       });
 
       if (plate) {
-        if (inputData.input === 'bite') {
+        if (
+        /*
+            plate.playing === 1 &&
+            plate.blocked === 0 &&
+            */
+        inputData.input === 'bite') {
           plate.bites++;
         }
       }
@@ -230,12 +194,15 @@ var Game = /*#__PURE__*/function (_GameEngine) {
     value: function serverSideInit() {
       var initValues = {
         bites: 0,
-        blocked: false,
+        blocked: 1,
         count: 0,
-        playerId: 0
+        isWinner: 0,
+        name: '',
+        playerId: 0,
+        playing: 0
       };
 
-      for (var i = 0; i < PLAYERS_COUNT; i++) {
+      for (var i = 0; i < _constants.PLAYERS_COUNT; i++) {
         this.addObjectToWorld(new Plate(this, null, initValues));
       }
     } // attach newly connected player to next available paddle
@@ -247,7 +214,9 @@ var Game = /*#__PURE__*/function (_GameEngine) {
         instanceType: Plate
       });
       var joined = false;
-      plates.forEach(function (plate) {
+      plates.filter(function (p) {
+        return p.playerId === 0;
+      }).forEach(function (plate) {
         if (joined) {
           return;
         }
@@ -280,8 +249,8 @@ var Game = /*#__PURE__*/function (_GameEngine) {
   }, {
     key: "clientSideInit",
     value: function clientSideInit() {
-      initBites(this);
-      initPlayers(this);
+      (0, _initHelpers.initBites)(this);
+      (0, _initHelpers.initPlayers)(this);
       window.addEventListener('beforeunload', function (ev) {
         ev.returnValue = 'Are you sure you want to leave the game?';
       });
@@ -291,20 +260,26 @@ var Game = /*#__PURE__*/function (_GameEngine) {
     value: function clientSideDraw() {
       var plates = this.world.queryObjects({
         instanceType: Plate
-      });
+      }); // const winner = plates.reduce((w, p) => p.isWinner === 1 ? p.playerId : '')
 
-      if (!plates.length) {
-        return;
-      }
-
-      plates.forEach(function (plate, i) {
+      plates.filter(function (p) {
+        return p.playerId !== 0;
+      }).forEach(function (plate, i) {
         var plateElement = document.querySelector('#player' + i);
 
-        if (plateElement && plate.playerId) {
-          plateElement.classList.remove('hidden');
-          plateElement.style.width = PLAYER_WIDTH_BUFFER + (PLATE_BITES - plate.bites) * BITE_WIDTH + 'px';
-          plateElement.innerHTML = [plate.playerId, plate.count, plate.bites].join(' ');
+        if (!plateElement || !plate.playerId) {
+          return;
         }
+
+        plateElement.classList.remove('hidden');
+        plateElement.style.width = _constants.PLAYER_WIDTH_BUFFER + (_constants.PLATE_BITES - plate.bites) * _constants.BITE_WIDTH + 'px';
+        var playerInfo = [];
+
+        if (_constants.DEBUG) {
+          playerInfo.push(plate.playerId);
+        }
+
+        plateElement.innerHTML = playerInfo.concat(plate.name, plate.count, plate.bites).join(' ');
       });
     }
   }]);

@@ -1,90 +1,20 @@
-import { GameEngine, BaseTypes, DynamicObject, KeyboardControls, SimplePhysicsEngine } from 'lance-gg'
+import {
+  BaseTypes,
+  DynamicObject,
+  GameEngine,
+  SimplePhysicsEngine
+} from 'lance-gg'
 
-const BITE_WIDTH = 20
-const COUNTS_TO_WIN = 10
-const PLATE_BITES = 9
-const PLAYER_WIDTH_BUFFER = 60
-const PLAYERS_COUNT = 20
+import { initBites, initPlayers } from './lib/init-helpers.js'
 
-const initBites = game => {
-  game.controls = new KeyboardControls(game.renderer.clientEngine)
-
-  const order = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-  shuffle(order)
-
-  const bites = document.querySelector('#bites')
-
-  order.forEach(o => {
-    const button = document.createElement('button')
-
-    button.classList.add('bite', 'button')
-
-    button.setAttribute('data-order', o)
-
-    button.innerHTML = 'bite ' + o
-
-    button.addEventListener('click', ev => {
-      if (o !== document.querySelectorAll('.bite.hidden').length) {
-        return true
-      }
-
-      if (button.classList.contains('blocked')) {
-        return true
-      }
-
-      button.classList.add('hidden')
-
-      game.controls.clientEngine.sendInput('bite')
-
-      if (o === PLATE_BITES - 1) {
-        const bites = document.querySelector('#bites')
-    
-        for (let i = bites.children.length; i >= 0; i--) {
-            bites.appendChild(bites.children[Math.random() * i | 0])
-        }
-
-        document.querySelectorAll('.bite').forEach(b => b.classList.remove('hidden'))
-      }
-    })
-
-    bites.appendChild(button)
-  })
-}
-
-const initPlayers = game => {
-  const players = document.querySelector('#players')
-
-  for (let i = 0; i < PLAYERS_COUNT; i++) {
-    const player = document.createElement('div')
-
-    player.classList.add('player', 'hidden')
-
-    player.setAttribute('id', 'player' + i)
-
-    players.appendChild(player)
-  }
-}
-
-const shuffle = arr => {
-  let currentIndex = arr.length
-  let randomIndex
-  let temporaryValue
-
-  // While there remain elements to shuffle...
-  while (currentIndex !== 0) {
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex)
-    currentIndex -= 1
-
-    // And swap it with the current element.
-    temporaryValue = arr[currentIndex]
-    arr[currentIndex] = arr[randomIndex]
-    arr[randomIndex] = temporaryValue
-  }
-
-  return arr
-}
+import {
+  BITE_WIDTH,
+  COUNTS_TO_WIN,
+  DEBUG,
+  PLATE_BITES,
+  PLAYER_WIDTH_BUFFER,
+  PLAYERS_COUNT
+} from './lib/constants.js'
 
 // A paddle has a health attribute
 class Plate extends DynamicObject {
@@ -94,12 +24,21 @@ class Plate extends DynamicObject {
     this.bites = 0
     this.blocked = 0
     this.count = 0
+    this.isWinner = 0
+    this.name = ''
+    this.playerId = 0
+    this.playing = 0
   }
 
   static get netScheme () {
     return Object.assign({
-      bites: { type: BaseTypes.TYPES.INT16 },
-      count: { type: BaseTypes.TYPES.INT16 }
+      bites: { type: BaseTypes.TYPES.INT8 },
+      blocked: { type: BaseTypes.TYPES.INT8 },
+      count: { type: BaseTypes.TYPES.INT8 },
+      isWinner: { type: BaseTypes.TYPES.INT8 },
+      name: { type: BaseTypes.TYPES.STRING },
+      playerId: { type: BaseTypes.TYPES.INT8 },
+      playing: { type: BaseTypes.TYPES.INT8 }
     }, super.netScheme)
   }
 
@@ -107,7 +46,12 @@ class Plate extends DynamicObject {
     super.syncTo(other)
 
     this.bites = other.bites
+    this.blocked = other.blocked
     this.count = other.count
+    this.isWinner = other.isWinner
+    this.name = other.name
+    this.playerId = other.playerId
+    this.playing = other.playing
   }
 }
 
@@ -146,6 +90,9 @@ export default class Game extends GameEngine {
         p.bites = 0
 
         if (p.count === COUNTS_TO_WIN) {
+          p.blocked = 1
+          p.playing = 0
+          p.isWinner = 1
         }
       }
     })
@@ -156,8 +103,15 @@ export default class Game extends GameEngine {
 
     // get the player paddle tied to the player socket
     const plate = this.world.queryObject({ playerId })
+
     if (plate) {
-      if (inputData.input === 'bite') {
+      if (
+      /*
+          plate.playing === 1 &&
+          plate.blocked === 0 &&
+          */
+        inputData.input === 'bite'
+      ) {
         plate.bites++
       }
     }
@@ -169,9 +123,12 @@ export default class Game extends GameEngine {
   serverSideInit () {
     const initValues = {
       bites: 0,
-      blocked: false,
+      blocked: 1,
       count: 0,
-      playerId: 0
+      isWinner: 0,
+      name: '',
+      playerId: 0,
+      playing: 0
     }
 
     for (let i = 0; i < PLAYERS_COUNT; i++) {
@@ -185,7 +142,7 @@ export default class Game extends GameEngine {
 
     let joined = false
 
-    plates.forEach(plate => {
+    plates.filter(p => p.playerId === 0).forEach(plate => {
       if (joined) {
         return
       }
@@ -225,18 +182,27 @@ export default class Game extends GameEngine {
   clientSideDraw () {
     const plates = this.world.queryObjects({ instanceType: Plate })
 
-    if (!plates.length) {
-      return
-    }
+    // const winner = plates.reduce((w, p) => p.isWinner === 1 ? p.playerId : '')
 
-    plates.forEach((plate, i) => {
+    plates.filter(p => p.playerId !== 0).forEach((plate, i) => {
       const plateElement = document.querySelector('#player' + i)
 
-      if (plateElement && plate.playerId) {
-        plateElement.classList.remove('hidden')
-        plateElement.style.width = PLAYER_WIDTH_BUFFER + ((PLATE_BITES - plate.bites) * BITE_WIDTH) + 'px'
-        plateElement.innerHTML = [plate.playerId, plate.count, plate.bites].join(' ')
+      if (!plateElement || !plate.playerId) {
+        return
       }
+
+      plateElement.classList.remove('hidden')
+      plateElement.style.width = PLAYER_WIDTH_BUFFER + ((PLATE_BITES - plate.bites) * BITE_WIDTH) + 'px'
+
+      const playerInfo = []
+
+      if (DEBUG) {
+        playerInfo.push(plate.playerId)
+      }
+
+      plateElement.innerHTML = playerInfo
+        .concat(plate.name, plate.count, plate.bites)
+        .join(' ')
     })
   }
 }
