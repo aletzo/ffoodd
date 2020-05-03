@@ -9,6 +9,8 @@ import { initBites, initPlayers } from './lib/init-helpers.js'
 
 import {
   BITE_WIDTH,
+  BLOCKED_TIME_FROM_ATTACK,
+  BLOCKED_TIME_FROM_KICK,
   COUNTS_TO_WIN,
   DEBUG,
   PLATE_BITES,
@@ -23,6 +25,7 @@ class Plate extends DynamicObject {
 
     this.bites = 0
     this.blocked = 0
+    this.canAttack = 0
     this.count = 0
     this.isWinner = 0
     this.name = ''
@@ -34,6 +37,7 @@ class Plate extends DynamicObject {
     return Object.assign({
       bites: { type: BaseTypes.TYPES.INT8 },
       blocked: { type: BaseTypes.TYPES.INT8 },
+      canAttack: { type: BaseTypes.TYPES.INT8 },
       count: { type: BaseTypes.TYPES.INT8 },
       isWinner: { type: BaseTypes.TYPES.INT8 },
       name: { type: BaseTypes.TYPES.STRING },
@@ -47,6 +51,7 @@ class Plate extends DynamicObject {
 
     this.bites = other.bites
     this.blocked = other.blocked
+    this.canAttack = other.count
     this.count = other.count
     this.isWinner = other.isWinner
     this.name = other.name
@@ -87,6 +92,7 @@ export default class Game extends GameEngine {
     plates.forEach((p, i) => {
       if (p.bites === PLATE_BITES) {
         p.count++
+        p.canAttack = 1
         p.bites = 0
 
         if (p.count === COUNTS_TO_WIN) {
@@ -104,16 +110,48 @@ export default class Game extends GameEngine {
     // get the player paddle tied to the player socket
     const plate = this.world.queryObject({ playerId })
 
-    if (plate) {
-      if (
-      /*
-          plate.playing === 1 &&
-          plate.blocked === 0 &&
-          */
-        inputData.input === 'bite'
-      ) {
-        plate.bites++
+    if (!plate || !plate.playing) {
+      return
+    }
+
+    if (plate.blocked === 1) {
+      return
+    }
+
+    if (inputData.input === 'bite') {
+      plate.bites++
+    }
+
+    if (inputData.input === 'kickLeft') {
+      const plateOnTheLeft = this.world.queryObject({ playerId: playerId - 1 })
+
+      if (plateOnTheLeft) {
+        plateOnTheLeft.blocked = 1
+
+        setInterval(() => { plateOnTheLeft.blocked = 0 }, BLOCKED_TIME_FROM_KICK)
       }
+    }
+
+    if (inputData.input === 'kickRight') {
+      const plateOnTheRight = this.world.queryObject({ playerId: playerId + 1 })
+
+      if (plateOnTheRight) {
+        plateOnTheRight.blocked = 1
+
+        setInterval(() => { plateOnTheRight.blocked = 0 }, BLOCKED_TIME_FROM_KICK)
+      }
+    }
+
+    if (plate.canAttack && inputData.input === 'attack') {
+      plate.canAttack = 0
+
+      const plates = this.world.queryObjects({ instanceType: Plate })
+
+      const otherPlates = plates.filter(p => p.playerId !== playerId)
+
+      otherPlates.map(p => { p.blocked = 1 })
+
+      setInterval(() => otherPlates.map(p => { p.blocked = 0 }), BLOCKED_TIME_FROM_ATTACK)
     }
   }
 
@@ -172,6 +210,9 @@ export default class Game extends GameEngine {
   clientSideInit () {
     initBites(this)
 
+    console.log('this')
+    console.log(this)
+
     initPlayers(this)
 
     if (!DEBUG) {
@@ -203,8 +244,8 @@ export default class Game extends GameEngine {
       }
 
       plateElement.classList.toggle('blocked', plate.blocked)
-
-      plateElement.classList.add('playing', plate.playing)
+      plateElement.classList.toggle('canAttack', plate.blocked)
+      plateElement.classList.toggle('playing', plate.playing)
 
       plateElement.classList.remove('hidden')
 

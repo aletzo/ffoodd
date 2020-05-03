@@ -51,6 +51,7 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
     _this = _super.call(this, gameEngine, options, props);
     _this.bites = 0;
     _this.blocked = 0;
+    _this.canAttack = 0;
     _this.count = 0;
     _this.isWinner = 0;
     _this.name = '';
@@ -66,6 +67,7 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
 
       this.bites = other.bites;
       this.blocked = other.blocked;
+      this.canAttack = other.count;
       this.count = other.count;
       this.isWinner = other.isWinner;
       this.name = other.name;
@@ -80,6 +82,9 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
           type: _lanceGg.BaseTypes.TYPES.INT8
         },
         blocked: {
+          type: _lanceGg.BaseTypes.TYPES.INT8
+        },
+        canAttack: {
           type: _lanceGg.BaseTypes.TYPES.INT8
         },
         count: {
@@ -155,6 +160,7 @@ var Game = /*#__PURE__*/function (_GameEngine) {
       plates.forEach(function (p, i) {
         if (p.bites === _constants.PLATE_BITES) {
           p.count++;
+          p.canAttack = 1;
           p.bites = 0;
 
           if (p.count === _constants.COUNTS_TO_WIN) {
@@ -175,15 +181,60 @@ var Game = /*#__PURE__*/function (_GameEngine) {
         playerId: playerId
       });
 
-      if (plate) {
-        if (
-        /*
-            plate.playing === 1 &&
-            plate.blocked === 0 &&
-            */
-        inputData.input === 'bite') {
-          plate.bites++;
+      if (!plate || !plate.playing) {
+        return;
+      }
+
+      if (plate.blocked === 1) {
+        return;
+      }
+
+      if (inputData.input === 'bite') {
+        plate.bites++;
+      }
+
+      if (inputData.input === 'kickLeft') {
+        var plateOnTheLeft = this.world.queryObject({
+          playerId: playerId - 1
+        });
+
+        if (plateOnTheLeft) {
+          plateOnTheLeft.blocked = 1;
+          setInterval(function () {
+            plateOnTheLeft.blocked = 0;
+          }, _constants.BLOCKED_TIME_FROM_KICK);
         }
+      }
+
+      if (inputData.input === 'kickRight') {
+        var plateOnTheRight = this.world.queryObject({
+          playerId: playerId + 1
+        });
+
+        if (plateOnTheRight) {
+          plateOnTheRight.blocked = 1;
+          setInterval(function () {
+            plateOnTheRight.blocked = 0;
+          }, _constants.BLOCKED_TIME_FROM_KICK);
+        }
+      }
+
+      if (plate.canAttack && inputData.input === 'attack') {
+        plate.canAttack = 0;
+        var plates = this.world.queryObjects({
+          instanceType: Plate
+        });
+        var otherPlates = plates.filter(function (p) {
+          return p.playerId !== playerId;
+        });
+        otherPlates.map(function (p) {
+          p.blocked = 1;
+        });
+        setInterval(function () {
+          return otherPlates.map(function (p) {
+            p.blocked = 0;
+          });
+        }, _constants.BLOCKED_TIME_FROM_ATTACK);
       }
     } //
     // SERVER ONLY CODE
@@ -250,6 +301,8 @@ var Game = /*#__PURE__*/function (_GameEngine) {
     key: "clientSideInit",
     value: function clientSideInit() {
       (0, _initHelpers.initBites)(this);
+      console.log('this');
+      console.log(this);
       (0, _initHelpers.initPlayers)(this);
 
       if (!_constants.DEBUG) {
@@ -279,12 +332,13 @@ var Game = /*#__PURE__*/function (_GameEngine) {
           return;
         }
 
-        if (!plate.isWinner) {
+        if (plate.isWinner) {
           plateElement.classList.add('winner');
         }
 
         plateElement.classList.toggle('blocked', plate.blocked);
-        plateElement.classList.add('playing', plate.playing);
+        plateElement.classList.toggle('canAttack', plate.blocked);
+        plateElement.classList.toggle('playing', plate.playing);
         plateElement.classList.remove('hidden');
         plateElement.style.width = _constants.PLAYER_WIDTH_BUFFER + (_constants.PLATE_BITES - plate.bites) * _constants.BITE_WIDTH + 'px';
         var playerInfo = [];

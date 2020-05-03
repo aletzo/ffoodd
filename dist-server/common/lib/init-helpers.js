@@ -11,6 +11,8 @@ var _misc = require("./misc.js");
 
 var _constants = require("./constants.js");
 
+var _this = void 0;
+
 var initBites = function initBites(game) {
   game.controls = new _lanceGg.KeyboardControls(game.renderer.clientEngine);
   var order = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -34,7 +36,19 @@ var initBites = function initBites(game) {
         return true;
       }
 
-      if (button.classList.contains('blocked')) {
+      var plate = _this.world.queryObject({
+        playerId: _this.playerId
+      });
+
+      if (!plate) {
+        return true;
+      }
+
+      if (plate.blocked) {
+        return true;
+      }
+
+      if (!plate.playing) {
         return true;
       }
 

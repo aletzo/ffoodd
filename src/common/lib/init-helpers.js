@@ -31,7 +31,17 @@ const initBites = game => {
         return true
       }
 
-      if (button.classList.contains('blocked')) {
+      const plate = this.world.queryObject({ playerId: this.playerId })
+
+      if (!plate) {
+        return true
+      }
+
+      if (plate.blocked) {
+        return true
+      }
+
+      if (!plate.playing) {
         return true
       }
 

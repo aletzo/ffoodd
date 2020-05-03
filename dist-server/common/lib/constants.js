@@ -3,11 +3,15 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.PLAYERS_COUNT = exports.PLAYER_WIDTH_BUFFER = exports.PLATE_BITES = exports.COUNTS_TO_WIN = exports.BITE_WIDTH = exports.DEBUG = void 0;
+exports.PLAYERS_COUNT = exports.PLAYER_WIDTH_BUFFER = exports.PLATE_BITES = exports.COUNTS_TO_WIN = exports.BLOCKED_TIME_FROM_KICK = exports.BLOCKED_TIME_FROM_ATTACK = exports.BITE_WIDTH = exports.DEBUG = void 0;
 var DEBUG = true;
 exports.DEBUG = DEBUG;
 var BITE_WIDTH = 20;
 exports.BITE_WIDTH = BITE_WIDTH;
+var BLOCKED_TIME_FROM_ATTACK = 4000;
+exports.BLOCKED_TIME_FROM_ATTACK = BLOCKED_TIME_FROM_ATTACK;
+var BLOCKED_TIME_FROM_KICK = 2000;
+exports.BLOCKED_TIME_FROM_KICK = BLOCKED_TIME_FROM_KICK;
 var COUNTS_TO_WIN = 10;
 exports.COUNTS_TO_WIN = COUNTS_TO_WIN;
 var PLATE_BITES = 9;

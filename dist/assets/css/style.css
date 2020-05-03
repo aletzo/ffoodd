@@ -1,3 +1,11 @@
+:root {
+    --gray: #c0c0c0;
+    --orange: orange;
+    --pink: rgb(255, 113, 206);
+    --red: red;
+    --winner-color: green;
+}
+
 body {
     padding: 1em;
 }
@@ -11,12 +19,24 @@ body {
 }
 
 .player {
-    background-color: rgb(255, 113, 206);
+    background-color: var(--gray);
     color: #fff;
     height: 2em;
     line-height: 2em;
     margin: 0 0 0.5em;
     width: 180px;
+}
+.player.playing {
+    background-color: var(--pink);
+}
+.player.canAttack {
+    background-color: var(--orange);
+}
+.player.blocked {
+    background-color: var(--red);
+}
+.player.winner {
+    background-color: var(--winner-color);
 }
 
 .bites {
