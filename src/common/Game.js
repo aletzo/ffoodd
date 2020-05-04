@@ -5,7 +5,13 @@ import {
   SimplePhysicsEngine
 } from 'lance-gg'
 
-import { initBites, initPlayers } from './lib/init-helpers.js'
+import {
+  initBites,
+  initNameForm,
+  initPlayers,
+  initStart,
+  initTables
+} from './lib/init-helpers.js'
 
 import {
   BITE_WIDTH,
@@ -76,6 +82,16 @@ export default class Game extends GameEngine {
     // client-only code
     this.on('client__rendererReady', this.clientSideInit.bind(this))
     this.on('client__draw', this.clientSideDraw.bind(this))
+
+    this.on('name', this.name.bind(this))
+  }
+
+  name (data) {
+    const plate = this.world.queryObject({ playerId: data.playerId })
+
+    if (plate && data.name && data.name.length) {
+      plate.name = data.name
+    }
   }
 
   registerClasses (serializer) {
@@ -107,7 +123,15 @@ export default class Game extends GameEngine {
   processInput (inputData, playerId) {
     super.processInput(inputData, playerId)
 
-    // get the player paddle tied to the player socket
+    if (inputData.input === 'start') {
+      const plates = this.world.queryObjects({ instanceType: Plate })
+
+      plates.forEach(p => {
+        p.blocked = 0
+        p.playing = 1
+      })
+    }
+
     const plate = this.world.queryObject({ playerId })
 
     if (!plate || !plate.playing) {
@@ -142,7 +166,7 @@ export default class Game extends GameEngine {
       }
     }
 
-    if (plate.canAttack && inputData.input === 'attack') {
+    if (inputData.input === 'attack' && plate.canAttack) {
       plate.canAttack = 0
 
       const plates = this.world.queryObjects({ instanceType: Plate })
@@ -209,7 +233,10 @@ export default class Game extends GameEngine {
   //
   clientSideInit () {
     initBites(this)
-    initPlayers(this)
+    initNameForm(this)
+    initPlayers()
+    initStart(this)
+    initTables()
 
     if (!DEBUG) {
       window.addEventListener('beforeunload', ev => {
@@ -223,43 +250,48 @@ export default class Game extends GameEngine {
 
     // const winner = plates.reduce((w, p) => p.isWinner === 1 ? p.playerId : '')
 
-    plates.filter(p => p.playerId !== 0).forEach((plate, i) => {
-      const plateElement = document.querySelector('#player' + i)
+    plates.forEach((p, i) => {
+      const plate = document.querySelector('#player' + i)
+      const table = document.querySelector('#table' + i)
 
-      if (!plateElement) {
+      if (!plate) {
         return
       }
 
-      if (!plate.playerId) {
-        plateElement.classList.add('hidden')
+      if (!p.playerId) {
+        plate.classList.add('hidden')
         return
       }
 
-      if (plate.isWinner) {
-        plateElement.classList.add('winner')
+      if (p.isWinner) {
+        plate.classList.add('winner')
       }
 
-      plateElement.classList.toggle('blocked', plate.blocked)
-      plateElement.classList.toggle('canAttack', plate.canAttack)
-      plateElement.classList.toggle('playing', plate.playing)
+      plate.classList.toggle('blocked', p.blocked)
+      plate.classList.toggle('canAttack', p.canAttack)
+      plate.classList.toggle('playing', p.playing)
 
-      if (this.playerId === plate.playerId) {
-        document.querySelector('#attack').classList.toggle('canAttack', plate.canAttack)
+      if (this.playerId === p.playerId) {
+        document.querySelector('#attack').classList.toggle('canAttack', p.canAttack)
       }
 
-      plateElement.classList.remove('hidden')
+      plate.classList.remove('hidden')
 
-      plateElement.style.width = PLAYER_WIDTH_BUFFER + ((PLATE_BITES - plate.bites) * BITE_WIDTH) + 'px'
+      plate.style.width = PLAYER_WIDTH_BUFFER + ((PLATE_BITES - p.bites) * BITE_WIDTH) + 'px'
 
       const playerInfo = []
 
       if (DEBUG) {
-        playerInfo.push(plate.playerId)
+        playerInfo.push(p.playerId)
       }
 
-      plateElement.innerHTML = playerInfo
-        .concat(plate.name, plate.count, plate.bites)
+      plate.innerHTML = playerInfo
+        .concat(p.name, p.count, p.bites)
         .join(' ')
+
+      table.classList.remove('hidden')
+
+      table.innerHTML = p.name.substring(0, 1)
     })
   }
 }

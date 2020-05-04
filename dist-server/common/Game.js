@@ -54,7 +54,7 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
     _this.canAttack = 0;
     _this.count = 0;
     _this.isWinner = 0;
-    _this.name = '';
+    _this.nameee = '';
     _this.playerId = 0;
     _this.playing = 0;
     return _this;
@@ -70,7 +70,7 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
       this.canAttack = other.count;
       this.count = other.count;
       this.isWinner = other.isWinner;
-      this.name = other.name;
+      this.nameee = other.nameee;
       this.playerId = other.playerId;
       this.playing = other.playing;
     }
@@ -93,7 +93,7 @@ var Plate = /*#__PURE__*/function (_DynamicObject) {
         isWinner: {
           type: _lanceGg.BaseTypes.TYPES.INT8
         },
-        name: {
+        nameee: {
           type: _lanceGg.BaseTypes.TYPES.STRING
         },
         playerId: {
@@ -138,10 +138,25 @@ var Game = /*#__PURE__*/function (_GameEngine) {
 
     _this2.on('client__draw', _this2.clientSideDraw.bind(_assertThisInitialized(_this2)));
 
+    _this2.on('nameee', _this2.nameee.bind(_assertThisInitialized(_this2)));
+
     return _this2;
   }
 
   _createClass(Game, [{
+    key: "nameee",
+    value: function nameee(data) {
+      var plate = this.world.queryObject({
+        playerId: data.playerId
+      });
+      console.log('data');
+      console.log(data);
+
+      if (plate && data.name && data.name.length) {
+        plate.nameee = data.name;
+      }
+    }
+  }, {
     key: "registerClasses",
     value: function registerClasses(serializer) {
       serializer.registerClass(Plate);
@@ -174,8 +189,17 @@ var Game = /*#__PURE__*/function (_GameEngine) {
   }, {
     key: "processInput",
     value: function processInput(inputData, playerId) {
-      _get(_getPrototypeOf(Game.prototype), "processInput", this).call(this, inputData, playerId); // get the player paddle tied to the player socket
+      _get(_getPrototypeOf(Game.prototype), "processInput", this).call(this, inputData, playerId);
 
+      if (inputData.input === 'start') {
+        var plates = this.world.queryObjects({
+          instanceType: Plate
+        });
+        plates.forEach(function (p) {
+          p.blocked = 0;
+          p.playing = 1;
+        });
+      }
 
       var plate = this.world.queryObject({
         playerId: playerId
@@ -219,14 +243,17 @@ var Game = /*#__PURE__*/function (_GameEngine) {
         }
       }
 
-      if (plate.canAttack && inputData.input === 'attack') {
+      if (inputData.input === 'attack' && plate.canAttack) {
         plate.canAttack = 0;
-        var plates = this.world.queryObjects({
+
+        var _plates = this.world.queryObjects({
           instanceType: Plate
         });
-        var otherPlates = plates.filter(function (p) {
+
+        var otherPlates = _plates.filter(function (p) {
           return p.playerId !== playerId;
         });
+
         otherPlates.map(function (p) {
           p.blocked = 1;
         });
@@ -248,7 +275,7 @@ var Game = /*#__PURE__*/function (_GameEngine) {
         blocked: 1,
         count: 0,
         isWinner: 0,
-        name: '',
+        nameee: '',
         playerId: 0,
         playing: 0
       };
@@ -301,9 +328,10 @@ var Game = /*#__PURE__*/function (_GameEngine) {
     key: "clientSideInit",
     value: function clientSideInit() {
       (0, _initHelpers.initBites)(this);
-      console.log('this');
-      console.log(this);
-      (0, _initHelpers.initPlayers)(this);
+      (0, _initHelpers.initNameForm)(this);
+      (0, _initHelpers.initPlayers)();
+      (0, _initHelpers.initStart)(this);
+      (0, _initHelpers.initTables)();
 
       if (!_constants.DEBUG) {
         window.addEventListener('beforeunload', function (ev) {
@@ -314,40 +342,48 @@ var Game = /*#__PURE__*/function (_GameEngine) {
   }, {
     key: "clientSideDraw",
     value: function clientSideDraw() {
+      var _this4 = this;
+
       var plates = this.world.queryObjects({
         instanceType: Plate
       }); // const winner = plates.reduce((w, p) => p.isWinner === 1 ? p.playerId : '')
 
-      plates.filter(function (p) {
-        return p.playerId !== 0;
-      }).forEach(function (plate, i) {
-        var plateElement = document.querySelector('#player' + i);
+      plates.forEach(function (p, i) {
+        var plate = document.querySelector('#player' + i);
+        var table = document.querySelector('#table' + i);
 
-        if (!plateElement) {
+        if (!plate) {
           return;
         }
 
-        if (!plate.playerId) {
-          plateElement.classList.add('hidden');
+        if (!p.playerId) {
+          plate.classList.add('hidden');
           return;
         }
 
-        if (plate.isWinner) {
-          plateElement.classList.add('winner');
+        if (p.isWinner) {
+          plate.classList.add('winner');
         }
 
-        plateElement.classList.toggle('blocked', plate.blocked);
-        plateElement.classList.toggle('canAttack', plate.blocked);
-        plateElement.classList.toggle('playing', plate.playing);
-        plateElement.classList.remove('hidden');
-        plateElement.style.width = _constants.PLAYER_WIDTH_BUFFER + (_constants.PLATE_BITES - plate.bites) * _constants.BITE_WIDTH + 'px';
+        plate.classList.toggle('blocked', p.blocked);
+        plate.classList.toggle('canAttack', p.canAttack);
+        plate.classList.toggle('playing', p.playing);
+
+        if (_this4.playerId === p.playerId) {
+          document.querySelector('#attack').classList.toggle('canAttack', p.canAttack);
+        }
+
+        plate.classList.remove('hidden');
+        plate.style.width = _constants.PLAYER_WIDTH_BUFFER + (_constants.PLATE_BITES - p.bites) * _constants.BITE_WIDTH + 'px';
         var playerInfo = [];
 
         if (_constants.DEBUG) {
-          playerInfo.push(plate.playerId);
+          playerInfo.push(p.playerId);
         }
 
-        plateElement.innerHTML = playerInfo.concat(plate.name, plate.count, plate.bites).join(' ');
+        plate.innerHTML = playerInfo.concat(p.nameee, p.count, p.bites).join(' ');
+        table.classList.remove('hidden');
+        table.innerHTML = p.nameee.substring(0, 1);
       });
     }
   }]);

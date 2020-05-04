@@ -31,7 +31,7 @@ const initBites = game => {
         return true
       }
 
-      const plate = this.world.queryObject({ playerId: this.playerId })
+      const plate = game.world.queryObject({ playerId: game.playerId })
 
       if (!plate) {
         return true
@@ -66,7 +66,36 @@ const initBites = game => {
   })
 }
 
-const initPlayers = game => {
+const initNameForm = game => {
+  document.querySelector('#nameInput').addEventListener('keyup', ev => {
+    const nameButton = document.querySelector('#nameButton')
+
+    if (!ev.target.value.length) {
+      nameButton.classList.add('disabled')
+      nameButton.disabled = true
+
+      return true
+    }
+
+    nameButton.disabled = false
+  })
+
+  document.querySelector('#nameButton').addEventListener('click', ev => {
+    if (ev.target.disabled) {
+      return true
+    }
+
+    game.emit('name', {
+      name: document.querySelector('#nameInput').value,
+      playerId: game.playerId
+    })
+
+    ev.target.classList.add('hidden')
+    document.querySelector('#nameInput').classList.add('hidden')
+  })
+}
+
+const initPlayers = () => {
   const players = document.querySelector('#players')
 
   for (let i = 0; i < PLAYERS_COUNT; i++) {
@@ -80,4 +109,26 @@ const initPlayers = game => {
   }
 }
 
-export { initBites, initPlayers }
+const initStart = game => {
+  document.querySelector('#start').addEventListener('click', ev => {
+    game.controls.clientEngine.sendInput('start')
+
+    ev.target.classList.add('hidden')
+  })
+}
+
+const initTables = () => {
+  const tables = document.querySelector('#tables')
+
+  for (let i = 0; i < PLAYERS_COUNT; i++) {
+    const table = document.createElement('div')
+
+    table.classList.add('table', 'button', 'hidden')
+
+    table.setAttribute('id', 'table' + i)
+
+    tables.appendChild(table)
+  }
+}
+
+export { initBites, initNameForm, initPlayers, initStart, initTables }

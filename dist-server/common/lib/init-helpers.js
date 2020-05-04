@@ -3,15 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.initPlayers = exports.initBites = void 0;
+exports.initTables = exports.initStart = exports.initPlayers = exports.initNameForm = exports.initBites = void 0;
 
 var _lanceGg = require("lance-gg");
 
 var _misc = require("./misc.js");
 
 var _constants = require("./constants.js");
-
-var _this = void 0;
 
 var initBites = function initBites(game) {
   game.controls = new _lanceGg.KeyboardControls(game.renderer.clientEngine);
@@ -36,8 +34,8 @@ var initBites = function initBites(game) {
         return true;
       }
 
-      var plate = _this.world.queryObject({
-        playerId: _this.playerId
+      var plate = game.world.queryObject({
+        playerId: game.playerId
       });
 
       if (!plate) {
@@ -75,7 +73,35 @@ var initBites = function initBites(game) {
 
 exports.initBites = initBites;
 
-var initPlayers = function initPlayers(game) {
+var initNameForm = function initNameForm(game) {
+  document.querySelector('#nameInput').addEventListener('keyup', function (ev) {
+    var nameButton = document.querySelector('#nameButton');
+
+    if (!ev.target.value.length) {
+      nameButton.classList.add('disabled');
+      nameButton.disabled = true;
+      return true;
+    }
+
+    nameButton.disabled = false;
+  });
+  document.querySelector('#nameButton').addEventListener('click', function (ev) {
+    if (ev.target.disabled) {
+      return true;
+    }
+
+    game.emit('nameee', {
+      name: document.querySelector('#nameInput').value,
+      playerId: game.playerId
+    });
+    ev.target.classList.add('hidden');
+    document.querySelector('#nameInput').classList.add('hidden');
+  });
+};
+
+exports.initNameForm = initNameForm;
+
+var initPlayers = function initPlayers() {
   var players = document.querySelector('#players');
 
   for (var i = 0; i < _constants.PLAYERS_COUNT; i++) {
@@ -87,4 +113,26 @@ var initPlayers = function initPlayers(game) {
 };
 
 exports.initPlayers = initPlayers;
+
+var initStart = function initStart(game) {
+  document.querySelector('#start').addEventListener('click', function (ev) {
+    game.controls.clientEngine.sendInput('start');
+    ev.target.classList.add('hidden');
+  });
+};
+
+exports.initStart = initStart;
+
+var initTables = function initTables() {
+  var tables = document.querySelector('#tables');
+
+  for (var i = 0; i < _constants.PLAYERS_COUNT; i++) {
+    var table = document.createElement('div');
+    table.classList.add('table', 'button', 'hidden');
+    table.setAttribute('id', 'table' + i);
+    tables.appendChild(table);
+  }
+};
+
+exports.initTables = initTables;
 //# sourceMappingURL=init-helpers.js.map
